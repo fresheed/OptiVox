@@ -45,10 +45,9 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
-//		p("onpreview");
+//		Log.d("gggg", "onprev");
 	    if (image_format == ImageFormat.NV21){
 	    	if ( !now_processing ){
-//    		p("onpreview: "+data.length);
 	    	data_array = data;
 	    	asyncProcessImage();
 	     }
@@ -69,9 +68,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 					long begin=System.currentTimeMillis();
 					final int l=pixel_array.length;
 					for (int i=0; i<l; i++){
-						pixel_array[i]=((data_array[i]^0xff))<<24;
-////						pixel_array[i]=Color.RED;
-////						if(data_array[i]>0)pos++; else neg++;
+						pixel_array[i]=((data_array[i]^0xFF))<<24;
+//						pixel_array[i]=((data_array[i] & 0x0F))<<24;
 						if (cont && (Integer.MAX_VALUE-sum)>data_array[i]){
 							sum+=data_array[i];
 							count++;
@@ -93,8 +91,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private Runnable updatePreview=new Runnable(){
 		@Override
 		public void run(){
-			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
-			preview.setImageBitmap(bitmap);
+//			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
+//			preview.setImageBitmap(bitmap);
 			p("bitmap set");
 			now_processing=false;
 		}

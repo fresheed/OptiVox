@@ -1,6 +1,13 @@
 package org.fresheed.theremin;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,7 +26,6 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	  private LinearLayout mainLayout;
 	  private int PreviewSizeWidth = 640;
 	  private int PreviewSizeHeight= 480;
-	  
 	  private Camera camera;
 	   
 	  @Override
@@ -46,16 +52,28 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	         
 	    mainLayout = (LinearLayout) findViewById(R.id.linear);
 	    mainLayout.addView(cam_preview, new LayoutParams(PreviewSizeWidth, PreviewSizeHeight));
+	    try {
+			InputStream is=getAssets().open("hand.png");
+	    	Bitmap bitmap=BitmapFactory.decodeStream(is);
+	    	
+	    	ImageProcessor proc=new ImageProcessor(bitmap);
+	    	Bitmap res=proc.getProcessedImage();
+			cam_preview.setImageBitmap(res);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    
 	    mainLayout.addView(camView, new LayoutParams(PreviewSizeWidth, PreviewSizeHeight));
 	    
 	    Button click=(Button)findViewById(R.id.clicker);
 	    click.setOnClickListener(this);
-//	    camView.setVisibility(View.INVISIBLE);
 	  }
 	  
 	  protected void onPause(){
 		super.onPause();
 		try {
+			cam_capture.cleanup();
 			camera.stopPreview();
 			camera.setPreviewCallback(null);
 			camera.release();
