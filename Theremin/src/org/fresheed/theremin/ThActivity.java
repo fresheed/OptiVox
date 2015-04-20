@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
+import android.opengl.Visibility;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -24,8 +25,8 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	  private CameraCapture cam_capture;
 	  private ImageView cam_preview;
 	  private LinearLayout mainLayout;
-	  private int PreviewSizeWidth = 640;
-	  private int PreviewSizeHeight= 480;
+	  private int preview_size_width = 320;
+	  private int previw_size_height= 240;
 	  private Camera camera;
 	   
 	  @Override
@@ -45,26 +46,25 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	    } finally {
 	    	Log.d("----", camera.toString());
 	    }
-	    cam_capture = new CameraCapture(PreviewSizeWidth, PreviewSizeHeight, cam_preview, camera);
+	    cam_capture = new CameraCapture(preview_size_width, previw_size_height, cam_preview, camera);
 	         
 	    camHolder.addCallback(cam_capture);
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 	         
 	    mainLayout = (LinearLayout) findViewById(R.id.linear);
-	    mainLayout.addView(cam_preview, new LayoutParams(PreviewSizeWidth, PreviewSizeHeight));
-	    try {
-			InputStream is=getAssets().open("hand.png");
-	    	Bitmap bitmap=BitmapFactory.decodeStream(is);
-	    	
-	    	ImageProcessor proc=new ImageProcessor(bitmap);
-	    	Bitmap res=proc.getProcessedImage();
-			cam_preview.setImageBitmap(res);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	    mainLayout.addView(cam_preview, new LayoutParams(preview_size_width, previw_size_height));
+//	    try {
+//			InputStream is=getAssets().open("hand.png");
+//	    	final Bitmap bitmap=BitmapFactory.decodeStream(is);
+//			ImageProcessor proc=new ImageProcessor(bitmap);
+//			Bitmap res=proc.getProcessedImage();
+//			cam_preview.setImageBitmap(res);
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	    
-	    mainLayout.addView(camView, new LayoutParams(PreviewSizeWidth, PreviewSizeHeight));
+	    mainLayout.addView(camView, new LayoutParams(preview_size_width, previw_size_height));
 	    
 	    Button click=(Button)findViewById(R.id.clicker);
 	    click.setOnClickListener(this);

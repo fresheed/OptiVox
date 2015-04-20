@@ -1,12 +1,15 @@
 package org.fresheed.theremin;
 
 import java.io.IOException;
+import java.util.List;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.hardware.Camera.Size;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -26,6 +29,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private byte[] data_array;
 	private int image_format;
 	
+	private ImageProcessor processor;
+	
 	private final Handler handler=new Handler(Looper.getMainLooper());
 	private Camera camera;
 	
@@ -41,6 +46,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		pixel_array=new int[prev_height*prev_width];
 		p("Creation: "+pixel_array.length);
 		camera=cam;
+		processor=new ImageProcessor(bitmap);
 	}
 
 	@Override
@@ -61,26 +67,18 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 				now_processing=true;
 				try {
 					if (false) Thread.sleep(1000);
-					int pos=0, neg=0;
 					int sum=0;
 					int count=0;
-					boolean cont=true;
 					long begin=System.currentTimeMillis();
-					final int l=pixel_array.length;
-					for (int i=0; i<l; i++){
-						pixel_array[i]=((data_array[i]^0xFF))<<24;
-//						pixel_array[i]=((data_array[i] & 0x0F))<<24;
-						if (cont && (Integer.MAX_VALUE-sum)>data_array[i]){
-							sum+=data_array[i];
-							count++;
-						} else cont=false;
-					}
+//					int left_offset=preview_width/4;
+//					int to_go=preview_width/2;
+					int left_offset=preview_height/4;
+					int to_go=preview_height/2;
+					processor.processImg(data_array, left_offset, to_go, preview_width, pixel_array);
 					long end=System.currentTimeMillis();
 					p("Time: "+(end-begin));
-//					p("pos/neg: "+pos+" "+neg);
 					p("Average:"+sum/(float)count);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 		        handler.post(updatePreview);
@@ -91,8 +89,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private Runnable updatePreview=new Runnable(){
 		@Override
 		public void run(){
-//			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
-//			preview.setImageBitmap(bitmap);
+			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
+			preview.setImageBitmap(bitmap);
 			p("bitmap set");
 			now_processing=false;
 		}
@@ -102,11 +100,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
 			camera.setPreviewDisplay(holder);
-//			camera.setParameters(new Pa);
 //			camera.setPreviewTexture(new SurfaceTexture(17));
-			Parameters p=camera.getParameters();
-			p.setPreviewFpsRange(1, 10);
-			camera.setParameters(p);
 		} catch (IOException ioe){
 			ioe.printStackTrace();
 		}
@@ -121,6 +115,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		} catch (Exception e){
 			
 		}
+		List<Size> sizes=params.getSupportedPictureSizes();
+		for (Size s: sizes) p(s.width+"x"+s.height);
 		params.setPreviewSize(width, height);
 		image_format=params.getPreviewFormat();
 		camera.setParameters(params);
