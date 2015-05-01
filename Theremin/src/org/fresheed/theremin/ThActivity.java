@@ -34,7 +34,6 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 		super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main_layout);
 	    
-//	    cam_preview = (ImageView)findViewById(R.id.preview);
 	    cam_preview=new ImageView(this);
 	 
 	    SurfaceView camView = new SurfaceView(this);

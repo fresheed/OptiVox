@@ -1,7 +1,5 @@
 package org.fresheed.theremin;
 
-import static org.fresheed.theremin.ThActivity.p;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +18,6 @@ public class ImageProcessor {
 	boolean f=true;
 	
 	List<Cluster> clusters;
-	
 	
 	public ImageProcessor(Bitmap i){
 		image=i;
@@ -47,70 +44,45 @@ public class ImageProcessor {
 			}
 		}
 		
-//		if (!f){
-//			int[][] xy=new int[clusters.size()][3];
-//			for (int cl=0; cl<clusters.size(); cl++){
-//				xy[cl][2]=0;
-//			}
-//			for (int i=0; i<WIDTH; i++){
-//				for (int j=offset; j<offset+interval; j++){
-////					bitmap_colors[i][j]=( (source[j*step+i]^0xFF)<<24); //fill bitmap
-//					xy[owners[i][j]][0]+=i;
-//					xy[owners[i][j]][1]+=j;
-//					xy[owners[i][j]][2]++;
-//				}
-//			}
-//			
-//			for (int cl=0; cl<clusters.size(); cl++){
-//				Cluster cur=clusters.get(cl);
-//				int cx=xy[cl][0]/xy[cl][2];
-//				int cy=xy[cl][1]/xy[cl][2];
-//				Log.d("Processor", "Data for "+cl+" cluster: cx="+cx+", cy="+cy+", size="+xy[cl][2]);
-//				cur.recalc(cx, cy);
-//			}
-//			
-//		}
-//		f=false;
+		for (Cluster c:clusters) c.updateColor();
+
 		float min, comp;
 		byte min_cluster;
 		int current_color;
 		Log.d(tag, "begin");
 		Cluster cur;
 		int size=clusters.size();
-		Cluster[] to_access=new Cluster[size];
-		clusters.toArray(to_access);
-//		int vert_offset=0;
-//		for (int i=offset; i<offset+interval; i++){
-//			for (int j=0; j<HEIGHT; j++){
 		for (int i=0; i<WIDTH; i++){
 			for (int j=offset; j<offset+interval; j++){
 				min=Float.MAX_VALUE;
 				min_cluster=-1;
 				current_color=bitmap_colors[i][j];
 				for (int cl=0; cl<size; cl++){
-					cur=to_access[cl];
+					cur=clusters.get(cl);
 					comp=cur.calcByteDifference(i,j, current_color);
 					if (comp<min){
 						min=comp;
 						min_cluster=cur.id;
 					}
 				}
-				owners[i][j]=min_cluster;
+//				owners[i][j]=min_cluster;
+				clusters.get(min_cluster).setOwnerTo(i, j);
 			}
-//			vert_offset++;
 		}
 		Log.d(tag, "end");
 		
 		int[] colors={Color.RED, Color.BLUE, Color.GRAY,
 					  Color.GREEN, Color.YELLOW, Color.CYAN,
 					  Color.BLACK, Color.WHITE, Color.DKGRAY};
-//		for (int i=offset; i<offset+interval; i++){
-//			for (int j=0; j<HEIGHT; j++){
 		for (int i=0; i<WIDTH; i++){
 			for (int j=offset; j<offset+interval; j++){
 				output[j*step+i]=colors[owners[i][j]];
 			}
 		}
+		
+//		for (Cluster cluster:clusters){
+//			cluster.update(offset, offset+interval);
+//		}
 	}
 	
 	public void processImgH(byte[] source, int offset, int interval, int step, int[] output){
@@ -122,6 +94,104 @@ public class ImageProcessor {
 		for (int i=0; i<WIDTH; i++){
 			for (int j=offset; j<offset+interval; j++){
 				output[j*step+i]=((owners[i][j]^0xFE))<<24;;
+			}
+		}
+	}
+	
+	public void processByGradient(byte[] source, int offset, int interval, int step, int[] output){
+//		for (int i=0; i<WIDTH; i++){
+//			for (int j=offset; j<offset+interval; j++){
+//				bitmap_colors[i][j]=( (source[j*step+i]^0xFF)<<24); //fill bitmap
+//			}
+//		}
+		
+		for (Cluster c:clusters) c.updateColor();
+		
+		int cur, l, r, t, b, lt, lb, rt, rb,
+				gx, gy, res;
+//			short count=0;
+		final float MAX_DELTA=6308352;
+		final double MAX_DELTA_LOG=(float) Math.log10(MAX_DELTA);
+		int white=Color.WHITE;
+		int lg=Color.LTGRAY;
+		int grey=Color.GRAY;
+		int dgr=Color.DKGRAY;
+		int black=Color.BLACK;
+		double rel_log, rel;
+		for (int i=1; i<WIDTH-2-1; i+=2){
+			for (int j=offset+1; j<offset+interval-2-1; j+=2){
+				cur=source[j*step+i];
+				l=source[j*step+i-1];
+				r=source[j*step+i+1];
+				t=source[(j-1)*step+i];
+				b=source[(j+1)*step+i];
+				lt=source[(j-1)*step+i-1];
+				lb=source[(j+1)*step+i-1];
+				rt=source[(j-1)*step+i+1];
+				rb=source[(j+1)*step+i+1];
+				
+//				gx=(lb+b+rb)-(lt+t+rt);
+//				gy=(rt+r+rb)-(lt+l+lb);
+	//				gx=(3*lb+10*b+3*rb)-(3*lt+10*t+3*rt);
+	//				gy=(3*rt+10*r+3*rb)-(3*lt+10*l+3*lb);
+				gx=rb-cur;
+				gy=b-r;
+				
+				res=gx*gx+gy*gy;
+				
+//				int tmp=(int)(0x7FFFFF*res/MAX_DELTA);
+				rel_log=Math.log10(res);
+				rel=rel_log/MAX_DELTA_LOG;
+//				if (rel < 0.5f) rel=0;
+				int tmp=(int)Math.min((255*rel), 255);
+//				Log.d("Tag", "rel: "+(res/MAX_DELTA));
+//				bitmap_colors[i][j]=0xFF000000 | (tmp<<8) | (tmp<<16) | (tmp);
+				bitmap_colors[i][j]=tmp<<24;
+//				bitmap_colors[i][j]=0xFF000000 | (tmp>>8);
+//				bitmap_colors[i][j]=(tmp<<24);
+//				Log.d("hEX", "Hex: "+Integer.toHexString(bitmap_colors[i][j]));
+			}
+		}
+		
+		
+
+		
+		for (int i=1; i<WIDTH-2; i+=2){
+			for (int j=offset+1; j<offset+interval-2; j+=2){
+				bitmap_colors[i+1][j]=bitmap_colors[i][j];			
+				bitmap_colors[i+1][j+1]=bitmap_colors[i][j];
+				bitmap_colors[i][j+1]=bitmap_colors[i][j];
+			}
+		}
+		
+		for (int i=0; i<WIDTH; i++){
+			for (int j=offset; j<offset+interval; j++){
+				output[j*step+i]=0;
+			}
+		}
+		
+//		for (int i=1; i<WIDTH-2; i+=2){
+//			for (int j=offset+1; j<offset+interval-2; j+=2){
+//				output[j*step+i]=bitmap_colors[i][j];
+//			}
+//		}
+		
+//		for (int i=0; i<WIDTH; i++){
+//			for (int j=offset; j<offset+interval; j++){
+//				int res=0;
+//				if (i%2==1 && j%2==1) res=0xFFFFFFFF;
+//				output[j*step+i]=res;
+//			}
+//		}
+		
+//		for (int i=0; i<output.length; i++){
+//			if (i%2==0) output[i]=0;
+//			else output[i]=0xFFFFFFFF;
+//		}
+		
+		for (int i=0; i<WIDTH; i++){
+			for (int j=offset; j<offset+interval; j++){
+				output[j*step+i]=bitmap_colors[i][j];
 			}
 		}
 	}
@@ -140,6 +210,8 @@ public class ImageProcessor {
 		int center_color, frombyte_center_color;
 		
 		int size;
+		int sum_x, sum_y;
+		
 		int min_x, max_x;
 		int min_y, max_y;
 		
@@ -148,6 +220,47 @@ public class ImageProcessor {
 			center_y=iy;
 			center_color=bitmap_colors[ix][iy];
 			this.id=(byte)id;
+			
+			size=0;
+			sum_x=0;
+			sum_y=0;
+		}
+		
+		public void update(int offset, int max) {
+			Log.d("PROC", "Id/size: "+id+" "+size);
+//			if (size==0) return;
+			if (size==0) size=1;
+			int appr_cx=sum_x/size;
+			int appr_cy=sum_y/size;
+			int min_md=Integer.MAX_VALUE;
+			loop: for (int i=0; i<WIDTH; i++){
+				for (int j=offset; j<max; j++){
+					if (owners[i][j]==this.id){
+						int manh_dist=Math.abs(appr_cx-i)+Math.abs(appr_cy-j);
+						if (manh_dist<min_md) {
+							min_md=manh_dist;
+							center_x=i;
+							center_y=j;
+							if (manh_dist<10) break loop;
+						}
+					}
+				}
+			}
+			
+			size=0;
+			sum_x=0;
+			sum_y=0;
+		}
+
+		public void setOwnerTo(int i, int j) {
+			owners[i][j]=this.id;
+			size++;
+			sum_x+=i;
+			sum_y+=j;
+		}
+
+		void updateColor(){
+			center_color=bitmap_colors[center_x][center_y];
 		}
 		
 		void recalc(int new_cx, int new_cy){
@@ -183,7 +296,9 @@ public class ImageProcessor {
 		}
 		
 		public float calcByteDifference(int x, int y, int current_color) {
-			int manh_dist=Math.abs((center_x-x)+(center_y-y));
+//			int manh_dist=Math.abs((center_x-x)+(center_y-y));
+			int manh_dist=Math.abs(center_x-x)+Math.abs(center_y-y);
+			
 			int color_diff=Math.abs(center_color-current_color);
 			return (COLOR_DIFF_COEFF*color_diff/MAX_COLOR_DIFF+(1-COLOR_DIFF_COEFF)*manh_dist/MANH_MAX);
 		}

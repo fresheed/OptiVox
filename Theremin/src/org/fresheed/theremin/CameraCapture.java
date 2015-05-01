@@ -70,11 +70,11 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 					int sum=0;
 					int count=0;
 					long begin=System.currentTimeMillis();
-//					int left_offset=preview_width/4;
-//					int to_go=preview_width/2;
 					int left_offset=preview_height/4;
 					int to_go=preview_height/2;
-					processor.processImg(data_array, left_offset, to_go, preview_width, pixel_array);
+//					processor.processImg(data_array, left_offset, to_go, preview_width, pixel_array);
+//					processor.processByGradient(data_array, left_offset, to_go, preview_width, pixel_array);
+					processor.processByGradient(data_array, 0, preview_height, preview_width, pixel_array);
 					long end=System.currentTimeMillis();
 					p("Time: "+(end-begin));
 					p("Average:"+sum/(float)count);
@@ -143,6 +143,5 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	public static void p(String m){
 		Log.d("CAMCAPTURE", m);
 	}
-	
 }
 
