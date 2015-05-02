@@ -11,6 +11,8 @@ import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.opengl.Visibility;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -28,6 +30,8 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	  private int preview_size_width = 320;
 	  private int previw_size_height= 240;
 	  private Camera camera;
+	  
+	  private final Handler handler=new Handler(Looper.getMainLooper());
 	   
 	  @Override
 	  public void onCreate(Bundle savedInstanceState){
@@ -45,7 +49,8 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	    } finally {
 	    	Log.d("----", camera.toString());
 	    }
-	    cam_capture = new CameraCapture(preview_size_width, previw_size_height, cam_preview, camera);
+	    cam_capture = new CameraCapture(preview_size_width, previw_size_height,
+	    								cam_preview, camera, handler);
 	         
 	    camHolder.addCallback(cam_capture);
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);

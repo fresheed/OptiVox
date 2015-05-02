@@ -31,13 +31,13 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	
 	private ImageProcessor processor;
 	
-	private final Handler handler=new Handler(Looper.getMainLooper());
+	private final Handler handler;
 	private Camera camera;
 	
 	private boolean now_processing=false;
 	
 	public CameraCapture (int prev_width, int prev_height,
-			ImageView cam_image, Camera cam) {
+			ImageView cam_image, Camera cam, Handler h) {
 		preview_width=prev_width;
 		preview_height=prev_height;
 		preview=cam_image;
@@ -47,6 +47,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		p("Creation: "+pixel_array.length);
 		camera=cam;
 		processor=new ImageProcessor(bitmap);
+		handler=h;
 	}
 
 	@Override
@@ -74,10 +75,10 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 					int to_go=preview_height/2;
 //					processor.processImg(data_array, left_offset, to_go, preview_width, pixel_array);
 //					processor.processByGradient(data_array, left_offset, to_go, preview_width, pixel_array);
-					processor.processByGradient(data_array, 0, preview_height, preview_width, pixel_array);
+					processor.processByGradient(data_array, 0, preview_height, preview_height, preview_width, pixel_array);
 					long end=System.currentTimeMillis();
-					p("Time: "+(end-begin));
-					p("Average:"+sum/(float)count);
+//					p("Time: "+(end-begin));
+//					p("Average:"+sum/(float)count);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -91,7 +92,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		public void run(){
 			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
 			preview.setImageBitmap(bitmap);
-			p("bitmap set");
+//			p("bitmap set");
 			now_processing=false;
 		}
 	};

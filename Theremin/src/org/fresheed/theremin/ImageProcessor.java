@@ -13,6 +13,8 @@ public class ImageProcessor {
 	final int WIDTH, HEIGHT;
 	final int[][] bitmap_colors;
 	
+	final int[] temp;
+	
 	byte[][] owners;
 	
 	boolean f=true;
@@ -25,6 +27,8 @@ public class ImageProcessor {
 		HEIGHT=image.getHeight();
 		owners=new byte[WIDTH][HEIGHT];
 		bitmap_colors=new int[WIDTH][HEIGHT];
+		temp=new int[WIDTH*HEIGHT];
+		
 		
 		clusters=new ArrayList<Cluster>(4);
 //		clusters.add(new Cluster(WIDTH/4, HEIGHT/2, 2)); //left middle
@@ -98,7 +102,7 @@ public class ImageProcessor {
 		}
 	}
 	
-	public void processByGradient(byte[] source, int offset, int interval, int step, int[] output){
+	public void processByGradientH(byte[] source, int offset, int interval, int full_height, int step, int[] output){
 //		for (int i=0; i<WIDTH; i++){
 //			for (int j=offset; j<offset+interval; j++){
 //				bitmap_colors[i][j]=( (source[j*step+i]^0xFF)<<24); //fill bitmap
@@ -118,51 +122,84 @@ public class ImageProcessor {
 		int dgr=Color.DKGRAY;
 		int black=Color.BLACK;
 		double rel_log, rel;
-		for (int i=1; i<WIDTH-2-1; i+=2){
-			for (int j=offset+1; j<offset+interval-2-1; j+=2){
-				cur=source[j*step+i];
-				l=source[j*step+i-1];
-				r=source[j*step+i+1];
-				t=source[(j-1)*step+i];
-				b=source[(j+1)*step+i];
-				lt=source[(j-1)*step+i-1];
-				lb=source[(j+1)*step+i-1];
-				rt=source[(j-1)*step+i+1];
-				rb=source[(j+1)*step+i+1];
+		int uv_offset=step*full_height;
+		for (int i=1; i<WIDTH-2-1; i+=1){
+			for (int j=offset+1; j<offset+interval-2; j+=1){
+				byte y=source[j*step+i];
+				byte u=source[uv_offset+(j/2)*(step/2)+i&~1+1];
+				byte v=source[uv_offset+(j/2)*(step/2)+i&~1];
+//				*r = yValue + (1.370705 * (vValue-128));
+//			    *g = yValue - (0.698001 * (vValue-128)) - (0.337633 * (uValue-128));
+//			    *b = yValue + (1.732446 * (uValue-128));
+				byte red=(byte) (y+(1.370705 * (v-128)));
+				byte green=(byte) (y-(0.698001 * (v-128)) - (0.337633 * (u-128)));
+				byte blue=(byte) (y + (1.732446 * (u-128)));
+				bitmap_colors[i][j]=0xFF000000 | (red<<16) | (green<<8) | (blue);
 				
+//				l=source[j*step+i-1];
+//				r=source[j*step+i+1];
+//				t=source[(j-1)*step+i];
+//				b=source[(j+1)*step+i];
+//				lt=source[(j-1)*step+i-1];
+//				lb=source[(j+1)*step+i-1];
+//				rt=source[(j-1)*step+i+1];
+//				rb=source[(j+1)*step+i+1];
+//				
 //				gx=(lb+b+rb)-(lt+t+rt);
 //				gy=(rt+r+rb)-(lt+l+lb);
-	//				gx=(3*lb+10*b+3*rb)-(3*lt+10*t+3*rt);
-	//				gy=(3*rt+10*r+3*rb)-(3*lt+10*l+3*lb);
-				gx=rb-cur;
-				gy=b-r;
-				
-				res=gx*gx+gy*gy;
-				
-//				int tmp=(int)(0x7FFFFF*res/MAX_DELTA);
-				rel_log=Math.log10(res);
-				rel=rel_log/MAX_DELTA_LOG;
-//				if (rel < 0.5f) rel=0;
-				int tmp=(int)Math.min((255*rel), 255);
-//				Log.d("Tag", "rel: "+(res/MAX_DELTA));
-//				bitmap_colors[i][j]=0xFF000000 | (tmp<<8) | (tmp<<16) | (tmp);
-				bitmap_colors[i][j]=tmp<<24;
-//				bitmap_colors[i][j]=0xFF000000 | (tmp>>8);
-//				bitmap_colors[i][j]=(tmp<<24);
-//				Log.d("hEX", "Hex: "+Integer.toHexString(bitmap_colors[i][j]));
+//	//				gx=(3*lb+10*b+3*rb)-(3*lt+10*t+3*rt);
+//	//				gy=(3*rt+10*r+3*rb)-(3*lt+10*l+3*lb);
+////				gx=rb-cur;
+////				gy=b-r;
+//				
+//				res=gx*gx+gy*gy;
+//				
+//				rel_log=Math.log10(res);
+//				if (rel_log==Double.NaN || rel_log==Double.NEGATIVE_INFINITY
+//						||rel_log==Double.POSITIVE_INFINITY){
+////					Log.d("TAG", "extra: "+rel_log+", arg: "+res);
+//					bitmap_colors[i][j]=Color.RED;
+//					continue;
+//				}
+//				if (rel_log>5){
+////					Log.d("TAG", "extra: "+rel_log+", arg: "+res);
+//					bitmap_colors[i][j]=Color.BLUE;
+//					continue;
+//				}
+//				
+//				rel=rel_log/MAX_DELTA_LOG;
+//				if (rel < 0.4f) rel=0;
+//				int tmp=(int)Math.min((255*rel), 255);
+////				Log.d("Tag", "rel: "+(res/MAX_DELTA));
+////				bitmap_colors[i][j]=0xFF000000 | (tmp<<8) | (tmp<<16) | (tmp);
+//				bitmap_colors[i][j]=tmp<<24;
+////				bitmap_colors[i][j]=(tmp<<24);
+////				Log.d("hEX", "Hex: "+Integer.toHexString(bitmap_colors[i][j]));
 			}
 		}
 		
-		
+//		final int BRIGHT=100;
+//		final int HAND_MIN=interval*1/15;
+//		int hand_pos=0;
+//		for (int i=1; i<WIDTH-2-1; i+=2){
+//			int brights=0;
+//			for (int j=offset+1; j<offset+interval-2-1; j+=2){
+//				if ((bitmap_colors[i][j]>>24)>BRIGHT){
+//					brights++;
+//				}
+//			}
+//			if (brights>=HAND_MIN) hand_pos=i;
+//		}
+//		Log.d("HAND", "hand_pos: "+hand_pos);
 
 		
-		for (int i=1; i<WIDTH-2; i+=2){
-			for (int j=offset+1; j<offset+interval-2; j+=2){
-				bitmap_colors[i+1][j]=bitmap_colors[i][j];			
-				bitmap_colors[i+1][j+1]=bitmap_colors[i][j];
-				bitmap_colors[i][j+1]=bitmap_colors[i][j];
-			}
-		}
+//		for (int i=1; i<WIDTH-2; i+=2){
+//			for (int j=offset+1; j<offset+interval-2; j+=2){
+//				bitmap_colors[i+1][j]=bitmap_colors[i][j];			
+//				bitmap_colors[i+1][j+1]=bitmap_colors[i][j];
+//				bitmap_colors[i][j+1]=bitmap_colors[i][j];
+//			}
+//		}
 		
 		for (int i=0; i<WIDTH; i++){
 			for (int j=offset; j<offset+interval; j++){
@@ -170,30 +207,122 @@ public class ImageProcessor {
 			}
 		}
 		
-//		for (int i=1; i<WIDTH-2; i+=2){
-//			for (int j=offset+1; j<offset+interval-2; j+=2){
-//				output[j*step+i]=bitmap_colors[i][j];
-//			}
-//		}
-		
-//		for (int i=0; i<WIDTH; i++){
-//			for (int j=offset; j<offset+interval; j++){
-//				int res=0;
-//				if (i%2==1 && j%2==1) res=0xFFFFFFFF;
-//				output[j*step+i]=res;
-//			}
-//		}
-		
-//		for (int i=0; i<output.length; i++){
-//			if (i%2==0) output[i]=0;
-//			else output[i]=0xFFFFFFFF;
-//		}
-		
 		for (int i=0; i<WIDTH; i++){
 			for (int j=offset; j<offset+interval; j++){
 				output[j*step+i]=bitmap_colors[i][j];
 			}
 		}
+	}
+	
+	public void processByGradient(byte[] source, int offset, int interval, int full_height, int step, int[] output){
+		int y, u, v;
+		int y_offset=full_height*WIDTH;
+//		for (int i=0; i<WIDTH; i++){
+//			for (int j=offset; j<offset+interval; j++){
+//				y=(source[j*step+i]); // y
+//				u=(source[y_offset+(j/2)*(WIDTH/2)+i]);
+//				bitmap_colors[i][j]=(y<<24) | (u<<16);
+//			}
+//		}
+		
+		int y1, y2, y3, y4;
+		for(int i=0, k=0; i < y_offset; i+=2, k+=2) {
+	        y1 = source[i  ]&0xff;
+	        y2 = source[i+1]&0xff;
+	        y3 = source[WIDTH+i  ]&0xff;
+	        y4 = source[WIDTH+i+1]&0xff;
+	        Log.d("Compare: ", Integer.toHexString(source[WIDTH+i])+">>"+Integer.toHexString(y3));
+
+	        v = source[y_offset+k  ]&0xff;
+	        u = source[y_offset+k+1]&0xff;
+//	        v = v-128;
+//	        u = u-128;
+
+//	        temp[i  ] = rgbFromYuv(y1, u, v);
+//	        temp[i+1] = rgbFromYuv(y2, u, v);
+//	        temp[WIDTH+i  ] = rgbFromYuv(y3, u, v);
+//	        temp[WIDTH+i+1] = rgbFromYuv(y4, u, v);
+//	        temp[i  ] = (y1+u+v)/2;
+//	        temp[i+1] = (y2+u+v)/2;
+//	        temp[WIDTH+i  ] = (y3+u+v)/2;
+//	        temp[WIDTH+i+1] = (y4+u+v)/2;
+	        temp[i  ] = y1;
+	        temp[i+1] = y2;
+	        temp[WIDTH+i  ] = y3;
+	        temp[WIDTH+i+1] = y4;
+	        
+	        if (i!=0 && (i+2)%WIDTH==0)
+	            i+=WIDTH;
+	    }
+		
+		int l,r,t,b,
+			 lt,lb,rt,rb;
+		int gx, gy;
+		double res, rel_log, rel;
+		final float MAX_DELTA=6308352;
+		final double MAX_DELTA_LOG=(float) Math.log10(MAX_DELTA);
+		for (int i=1; i<WIDTH-2-1; i+=1){
+			for (int j=offset+1; j<offset+interval-2; j+=1){
+//				l=Color.red(temp[j*step+i-1]);
+//				r=Color.red(temp[j*step+i+1]);
+//				t=Color.red(temp[(j-1)*step+i]);
+//				b=Color.red(temp[(j+1)*step+i]);
+//				lt=Color.red(temp[(j-1)*step+i-1]);
+//				lb=Color.red(temp[(j+1)*step+i-1]);
+//				rt=Color.red(temp[(j-1)*step+i+1]);
+//				rb=Color.red(temp[(j+1)*step+i+1]);
+				l=(temp[j*step+i-1]);
+				r=(temp[j*step+i+1]);
+				t=(temp[(j-1)*step+i]);
+				b=(temp[(j+1)*step+i]);
+				lt=(temp[(j-1)*step+i-1]);
+				lb=(temp[(j+1)*step+i-1]);
+				rt=(temp[(j-1)*step+i+1]);
+				rb=(temp[(j+1)*step+i+1]);
+				
+				gx=(lb+b+rb)-(lt+t+rt);
+				gy=(rt+r+rb)-(lt+l+lb);
+	//				gx=(3*lb+10*b+3*rb)-(3*lt+10*t+3*rt);
+	//				gy=(3*rt+10*r+3*rb)-(3*lt+10*l+3*lb);
+//				gx=rb-cur;
+//				gy=b-r;
+				
+				res=gx*gx+gy*gy;
+				
+				rel_log=Math.log10(res);
+				if (rel_log==Double.NaN || rel_log==Double.NEGATIVE_INFINITY
+						||rel_log==Double.POSITIVE_INFINITY){
+//					Log.d("TAG", "extra: "+rel_log+", arg: "+res);
+					bitmap_colors[i][j]=Color.RED;
+					continue;
+				}
+				if (rel_log>5){
+//					Log.d("TAG", "extra: "+rel_log+", arg: "+res);
+					bitmap_colors[i][j]=Color.BLUE;
+					continue;
+				}
+				
+				rel=rel_log/MAX_DELTA_LOG;
+				if (rel < 0.5f) rel=0;
+				int tmp=(int)Math.min((255*rel), 255);
+//				Log.d("Tag", "rel: "+(res/MAX_DELTA));
+//				bitmap_colors[i][j]=0xFF000000 | (tmp<<8) | (tmp<<16) | (tmp);
+				output[j*step+i]=(tmp<<24);
+//				bitmap_colors[i][j]=(tmp<<24);
+			}
+		}
+		
+	}
+	
+	static int rgbFromYuv(int y, int u, int v){
+		int red = clampUnsignedByte(y + (int)1.402f*v);
+		int green = clampUnsignedByte(y - (int)(0.344f*u +0.714f*v));
+		int blue = clampUnsignedByte(y + (int)1.772f*u);
+		return 0xFF000000 | (red<<16) | (green<<8) | (blue);
+	}
+	
+	static int clampUnsignedByte(int arg){
+		return arg > 255 ? 255 : (arg<0 ? 0 : arg&0xFF);
 	}
 	
 	int indexByXY(int x, int y){
