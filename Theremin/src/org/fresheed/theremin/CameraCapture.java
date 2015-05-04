@@ -6,15 +6,14 @@ import java.util.List;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 @SuppressWarnings("deprecation")
 public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCallback {
@@ -22,6 +21,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private final int preview_width, preview_height;
 	
 	private final ImageView preview;
+	private final TextView freq_view;
 	private final Bitmap bitmap;
 	private final int[] pixel_array;
 			private final int[] colors={Color.RED, Color.BLACK, Color.BLUE, Color.CYAN, Color.MAGENTA};
@@ -33,14 +33,18 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	
 	private final Handler handler;
 	private Camera camera;
+	private SoundPlayer player;
 	
+	int frequency;
 	private boolean now_processing=false;
 	
 	public CameraCapture (int prev_width, int prev_height,
-			ImageView cam_image, Camera cam, Handler h) {
+			ImageView cam_image, TextView fr_v, SoundPlayer pl, Camera cam, Handler h) {
 		preview_width=prev_width;
 		preview_height=prev_height;
 		preview=cam_image;
+		freq_view=fr_v;
+		player=pl;
 		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ARGB_8888);
 //		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ALPHA_8);
 		pixel_array=new int[prev_height*prev_width];
@@ -66,22 +70,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 			@Override
 			public void run(){
 				now_processing=true;
-				try {
-					if (false) Thread.sleep(1000);
-					int sum=0;
-					int count=0;
-					long begin=System.currentTimeMillis();
-					int left_offset=preview_height/4;
-					int to_go=preview_height/2;
-//					processor.processImg(data_array, left_offset, to_go, preview_width, pixel_array);
-//					processor.processByGradient(data_array, left_offset, to_go, preview_width, pixel_array);
-					processor.processByGradient(data_array, 0, preview_height, preview_height, preview_width, pixel_array);
-					long end=System.currentTimeMillis();
-//					p("Time: "+(end-begin));
-//					p("Average:"+sum/(float)count);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				frequency=processor.processByGradient(data_array, 0, preview_height, preview_height, preview_width, pixel_array);
 		        handler.post(updatePreview);
 			}
 		}.start();
@@ -92,7 +81,8 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		public void run(){
 			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
 			preview.setImageBitmap(bitmap);
-//			p("bitmap set");
+			freq_view.setText("Frequency:"+frequency);
+			player.setFrequency(frequency);
 			now_processing=false;
 		}
 	};

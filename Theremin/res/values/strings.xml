@@ -6,5 +6,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_sound_test">SoundTest</string>
+    <string name="title_activity_settings">Settings</string>
 
 </resources>
