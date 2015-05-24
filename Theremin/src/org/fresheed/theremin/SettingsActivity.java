@@ -2,12 +2,14 @@ package org.fresheed.theremin;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
 public class SettingsActivity extends Activity {
 	
+	LinearLayout settings;
 	SeekBar filter, sens;
 	TextView res;
 	
@@ -41,6 +43,8 @@ public class SettingsActivity extends Activity {
 		};
 		filter.setOnSeekBarChangeListener(listener);
 		sens.setOnSeekBarChangeListener(listener);
+		
+		settings=(LinearLayout) findViewById(R.id.settings);
 	}
 
 }

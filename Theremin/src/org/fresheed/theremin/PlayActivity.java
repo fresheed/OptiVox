@@ -1,6 +1,7 @@
 package org.fresheed.theremin;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,7 +51,7 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    	Log.d("----", camera.toString());
 	    }
 	    cam_capture = new CameraCapture(preview_size_width, previw_size_height,
-	    								cam_preview, freq, player, camera, handler);
+	    								camera, handler, this.getProcessCallback());
 	         
 	    camHolder.addCallback(cam_capture);
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -63,6 +64,7 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    Button click=(Button)findViewById(R.id.clicker);
 	    click.setOnClickListener(this);
 	    
+	    Log.d("TAG", "end onCreate");
 	  }
 	  
 	  @Override
@@ -74,6 +76,8 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 			camera.setPreviewCallback(null);
 			camera.release();
 			camera=null;
+			
+			player.stop();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
@@ -82,7 +86,6 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	 @Override
 	 public void onDestroy(){
 		 super.onDestroy();
-		 player.stop();
 	 }
 	  
 	  @Override
@@ -95,7 +98,20 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    }
 	  }
 	  
-	  public static void p(String m){
-//			Log.d("CAMCAPTURE", m);
-		}
+	  ImageProcessCallback getProcessCallback(){
+		  return new ImageProcessCallback() {
+			
+			@Override
+			public void setProcessedImage(Bitmap b) {
+				cam_preview.setImageBitmap(b);
+			}
+			
+			@Override
+			public void setFrequency(int f) {
+				freq.setText("Frequence: "+f);
+				player.setFrequency(f);
+			}
+		};
+	  }
+	  
 }

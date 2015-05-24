@@ -11,6 +11,7 @@ import android.util.Log;
 public class ImageProcessor {
 	final static String tag="Clusters";
 	final Bitmap image;
+	final int process_y_start, process_y_interval;
 	final int WIDTH, HEIGHT;
 	final int[][] bitmap_colors;
 	
@@ -31,11 +32,10 @@ public class ImageProcessor {
 		bitmap_colors=new int[WIDTH][HEIGHT];
 		temp=new int[WIDTH*HEIGHT];
 		
+		process_y_start=0;
+		process_y_interval=HEIGHT;
 		
 		clusters=new ArrayList<Cluster>(4);
-//		clusters.add(new Cluster(WIDTH/4, HEIGHT/2, 2)); //left middle
-//		clusters.add(new Cluster(WIDTH/2, HEIGHT/2, 3)); //mid middle
-//		clusters.add(new Cluster(WIDTH*3/4, HEIGHT/2, 4)); //right middle
 		
 		clusters.add(new Cluster(WIDTH/2, HEIGHT/4, 0)); 
 		clusters.add(new Cluster(WIDTH/3, HEIGHT/2, 1));
@@ -104,7 +104,7 @@ public class ImageProcessor {
 		}
 	}
 	
-	public void processByGradientH(byte[] source, int offset, int interval, int full_height, int step, int[] output){
+	public void processByGradientH(byte[] source, int offset, int interval, int step, int[] output){
 //		for (int i=0; i<WIDTH; i++){
 //			for (int j=offset; j<offset+interval; j++){
 //				bitmap_colors[i][j]=( (source[j*step+i]^0xFF)<<24); //fill bitmap
@@ -124,7 +124,7 @@ public class ImageProcessor {
 		int dgr=Color.DKGRAY;
 		int black=Color.BLACK;
 		double rel_log, rel;
-		int uv_offset=step*full_height;
+		int uv_offset=step*HEIGHT;
 		for (int i=1; i<WIDTH-2-1; i+=1){
 			for (int j=offset+1; j<offset+interval-2; j+=1){
 				byte y=source[j*step+i];
@@ -216,16 +216,16 @@ public class ImageProcessor {
 		}
 	}
 	
-	public int processByGradient(byte[] source, int offset, int interval, int full_height, int step, int[] output){
-		int y, u, v;
-		int y_offset=full_height*WIDTH;
-//		for (int i=0; i<WIDTH; i++){
-//			for (int j=offset; j<offset+interval; j++){
-//				y=(source[j*step+i]); // y
-//				u=(source[y_offset+(j/2)*(WIDTH/2)+i]);
-//				bitmap_colors[i][j]=(y<<24) | (u<<16);
-//			}
-//		}
+	public int processByGradient(byte[] source, int[] output, float bright_coeff, float bright_percent){
+		int step=WIDTH;
+		int y_offset=HEIGHT*WIDTH;
+		
+		int bright_threshold=(int) (bright_coeff*255);
+		int brights_per_line=(int) (bright_percent*HEIGHT);
+		
+		for (int i=0; i<output.length; i++){
+			output[i]=Color.WHITE;
+		}
 		
 		int y1, y2, y3, y4;
 		for(int i=0; i < y_offset; i+=2) {
@@ -243,16 +243,17 @@ public class ImageProcessor {
 	            i+=WIDTH;
 	    }
 		
-		int l,r,t,b,
+		int l,r,t,b, cur,
 			 lt,lb,rt,rb;
 		int gx, gy;
 		double res, rel_log, rel;
 		final float MAX_DELTA=6308352;
 		final double MAX_DELTA_LOG=(float) Math.log10(MAX_DELTA);
 		int hand_pos=0;
-		for (int i=1; i<WIDTH-2-1; i+=1){
+		for (int i=1; i<WIDTH-2; i+=1){
 			int brights=0;
-			for (int j=offset+1; j<offset+interval-2; j+=1){
+			for (int j=process_y_start+1; j<process_y_start+process_y_interval-1; j+=1){
+				cur=temp[j*step+i];
 				l=(temp[j*step+i-1]);
 				r=(temp[j*step+i+1]);
 				t=(temp[(j-1)*step+i]);
@@ -264,11 +265,7 @@ public class ImageProcessor {
 				
 				gx=(lb+b+rb)-(lt+t+rt);
 				gy=(rt+r+rb)-(lt+l+lb);
-//				gx=(3*lb+10*b+3*rb)-(3*lt+10*t+3*rt);
-//				gy=(3*rt+10*r+3*rb)-(3*lt+10*l+3*lb);
-				
-//				gx=rb-cur;
-//				gy=b-r;
+				//or another method
 				
 				res=gx*gx+gy*gy;
 				
@@ -279,22 +276,17 @@ public class ImageProcessor {
 					bitmap_colors[i][j]=Color.RED;
 					continue;
 				}
-				if (rel_log>5){
-//					Log.d("TAG", "extra: "+rel_log+", arg: "+res);
-					bitmap_colors[i][j]=Color.BLUE;
-					continue;
-				}
 				
 				rel=rel_log/MAX_DELTA_LOG;
 				if (rel < 0.5f) rel=0;
 				int tmp=(int)Math.min((255*rel), 255);
 				output[j*step+i]=(tmp<<24);
-				if (tmp>160) brights++;
+				if (tmp>bright_threshold) brights++;
 			}
-			if (brights>10) hand_pos=i;
+			if (brights>brights_per_line) hand_pos=i;
 		}
 		
-		for (int j=offset+1; j<offset+interval-2; j+=1){
+		for (int j=process_y_start+1; j<process_y_start+process_y_interval-1; j+=1){
 			output[j*step+hand_pos]=Color.RED;
 		}
 		

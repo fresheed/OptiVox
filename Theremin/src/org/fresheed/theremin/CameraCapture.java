@@ -20,38 +20,40 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private final static String t="CAMERACAPTURE";
 	private final int preview_width, preview_height;
 	
-	private final ImageView preview;
-	private final TextView freq_view;
 	private final Bitmap bitmap;
 	private final int[] pixel_array;
 			private final int[] colors={Color.RED, Color.BLACK, Color.BLUE, Color.CYAN, Color.MAGENTA};
-			private int counter=0;
 	private byte[] data_array;
 	private int image_format;
 	
 	private ImageProcessor processor;
+	private final float DEFAULT_THRESHOLD=0.5F,
+						DEFAULT_PER_LINE=0.1F;
+	private float threshold, per_line;
 	
-	private final Handler handler;
+	private Handler handler;
+	private ImageProcessCallback process_callback;
+	
 	private Camera camera;
-	private SoundPlayer player;
 	
 	int frequency;
 	private boolean now_processing=false;
 	
-	public CameraCapture (int prev_width, int prev_height,
-			ImageView cam_image, TextView fr_v, SoundPlayer pl, Camera cam, Handler h) {
+	public CameraCapture (int prev_width, int prev_height, Camera cam, Handler h, ImageProcessCallback cb) {
 		preview_width=prev_width;
 		preview_height=prev_height;
-		preview=cam_image;
-		freq_view=fr_v;
-		player=pl;
 		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ARGB_8888);
 //		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ALPHA_8);
 		pixel_array=new int[prev_height*prev_width];
 		p("Creation: "+pixel_array.length);
+		
 		camera=cam;
 		processor=new ImageProcessor(bitmap);
 		handler=h;
+		process_callback=cb;
+		
+		threshold=DEFAULT_THRESHOLD;
+		per_line=DEFAULT_PER_LINE;
 	}
 
 	@Override
@@ -64,13 +66,18 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	     }
 	   }
 	}
+	
+	public void setProcessingValues(float t, float p){
+		threshold=t;
+		per_line=p;
+	}
 
 	private void asyncProcessImage() {
 		new Thread(){
 			@Override
 			public void run(){
 				now_processing=true;
-				frequency=processor.processByGradient(data_array, 0, preview_height, preview_height, preview_width, pixel_array);
+				frequency=processor.processByGradient(data_array, pixel_array, threshold, per_line);
 		        handler.post(updatePreview);
 			}
 		}.start();
@@ -80,10 +87,11 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		@Override
 		public void run(){
 			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
-			preview.setImageBitmap(bitmap);
-			freq_view.setText("Frequency:"+frequency);
-			player.setFrequency(frequency);
+			process_callback.setFrequency(frequency);
+			process_callback.setProcessedImage(bitmap);
+//			player.setFrequency(frequency);
 			now_processing=false;
+//			Log.d("TAG", "after callback");
 		}
 	};
 
