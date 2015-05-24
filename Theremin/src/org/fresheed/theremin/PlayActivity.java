@@ -1,16 +1,12 @@
 package org.fresheed.theremin;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
-import android.opengl.Visibility;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -19,24 +15,32 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class ThActivity extends Activity implements android.view.View.OnClickListener {
+public class PlayActivity extends Activity implements android.view.View.OnClickListener {
 	  private CameraCapture cam_capture;
 	  private ImageView cam_preview;
+	  private TextView freq;
 	  private LinearLayout mainLayout;
+	  SoundPlayer player;
 	  private int preview_size_width = 320;
 	  private int previw_size_height= 240;
 	  private Camera camera;
+	  
+	  private final Handler handler=new Handler(Looper.getMainLooper());
 	   
 	  @Override
 	  public void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
-	    setContentView(R.layout.main_layout);
+	    setContentView(R.layout.play_layout);
 	    
-//	    cam_preview = (ImageView)findViewById(R.id.preview);
 	    cam_preview=new ImageView(this);
-	 
+	    freq=(TextView)findViewById(R.id.freq_view);
+
+	    player=new SoundPlayer();
+	    player.playInBackground();
+	    
 	    SurfaceView camView = new SurfaceView(this);
 	    SurfaceHolder camHolder = camView.getHolder();
 	    try {
@@ -46,30 +50,24 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	    } finally {
 	    	Log.d("----", camera.toString());
 	    }
-	    cam_capture = new CameraCapture(preview_size_width, previw_size_height, cam_preview, camera);
+	    cam_capture = new CameraCapture(preview_size_width, previw_size_height,
+	    								camera, handler, this.getProcessCallback());
 	         
 	    camHolder.addCallback(cam_capture);
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 	         
 	    mainLayout = (LinearLayout) findViewById(R.id.linear);
 	    mainLayout.addView(cam_preview, new LayoutParams(preview_size_width, previw_size_height));
-//	    try {
-//			InputStream is=getAssets().open("hand.png");
-//	    	final Bitmap bitmap=BitmapFactory.decodeStream(is);
-//			ImageProcessor proc=new ImageProcessor(bitmap);
-//			Bitmap res=proc.getProcessedImage();
-//			cam_preview.setImageBitmap(res);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	    
 	    mainLayout.addView(camView, new LayoutParams(preview_size_width, previw_size_height));
 	    
 	    Button click=(Button)findViewById(R.id.clicker);
 	    click.setOnClickListener(this);
+	    
+	    Log.d("TAG", "end onCreate");
 	  }
 	  
+	  @Override
 	  protected void onPause(){
 		super.onPause();
 		try {
@@ -78,9 +76,16 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 			camera.setPreviewCallback(null);
 			camera.release();
 			camera=null;
+			
+			player.stop();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+	 }
+	  
+	 @Override
+	 public void onDestroy(){
+		 super.onDestroy();
 	 }
 	  
 	  @Override
@@ -93,7 +98,20 @@ public class ThActivity extends Activity implements android.view.View.OnClickLis
 	    }
 	  }
 	  
-	  public static void p(String m){
-//			Log.d("CAMCAPTURE", m);
-		}
+	  ImageProcessCallback getProcessCallback(){
+		  return new ImageProcessCallback() {
+			
+			@Override
+			public void setProcessedImage(Bitmap b) {
+				cam_preview.setImageBitmap(b);
+			}
+			
+			@Override
+			public void setFrequency(int f) {
+				freq.setText("Frequence: "+f);
+				player.setFrequency(f);
+			}
+		};
+	  }
+	  
 }
