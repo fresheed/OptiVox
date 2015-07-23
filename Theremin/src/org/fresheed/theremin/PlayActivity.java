@@ -20,11 +20,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public class PlayActivity extends Activity implements android.view.View.OnClickListener {
+public class PlayActivity extends Activity  {
 	  private CameraCapture cam_capture;
 	  private ImageView cam_preview;
 	  private TextView freq;
-	  private LinearLayout mainLayout;
+	  private LinearLayout main_layout;
 	  SoundPlayer player;
 	  private int preview_size_width = 320;
 	  private int previw_size_height= 240;
@@ -59,9 +59,9 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    camHolder.addCallback(cam_capture);
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 	         
-	    mainLayout = (LinearLayout) findViewById(R.id.linear);
-	    mainLayout.addView(cam_preview, 0, new LayoutParams(preview_size_width, previw_size_height));
-	    mainLayout.addView(camView, 0, new LayoutParams(preview_size_width, previw_size_height));
+	    main_layout = (LinearLayout) findViewById(R.id.linear);
+	    main_layout.addView(cam_preview, 0, new LayoutParams(preview_size_width, previw_size_height));
+	    main_layout.addView(camView, 0, new LayoutParams(preview_size_width, previw_size_height));
 	    
 	    useSettings();
 	    
@@ -88,17 +88,6 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	 public void onDestroy(){
 		 super.onDestroy();
 	 }
-	  
-	  @Override
-	  public void onClick(View v) {
-	    switch (v.getId()) {
-//	    case R.id.goto_settings:
-//	    	Intent i=new Intent(this, SettingsActivity.class);
-//	    	startActivity(i);
-//	      break;
-	    }
-	  }
-	  
 	    
 		SeekBar filter, sens;
 		float filter_value, sens_value;

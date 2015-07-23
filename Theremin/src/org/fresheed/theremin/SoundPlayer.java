@@ -10,8 +10,6 @@ import android.util.Log;
 public class SoundPlayer {
 	final static int DURATION_MS=200, RATE=8000;
 	int buffer_size;
-//	final static int freq1=440, freq2=880;
-//	short[] samples1, samples2;
 	final int FREQ_INTERVAL=320/7;
 	float[] freqs={261.6F, 293.7F, 329.6F, 349.2F, 392, 440, 494};
 	short[][] samples=new short[7][];

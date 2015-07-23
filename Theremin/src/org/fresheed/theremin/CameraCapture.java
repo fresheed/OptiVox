@@ -58,7 +58,6 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
-//		Log.d("gggg", "onprev");
 	    if (image_format == ImageFormat.NV21){
 	    	if ( !now_processing ){
 	    	data_array = data;
@@ -78,7 +77,6 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 			public void run(){
 				now_processing=true;
 				frequency=processor.processByGradient(data_array, pixel_array, threshold, per_line);
-//				processor.processImg(data_array, 0, preview_height,preview_width, pixel_array);
 		        handler.post(updatePreview);
 			}
 		}.start();
@@ -90,9 +88,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
 			process_callback.setFrequency(frequency);
 			process_callback.setProcessedImage(bitmap);
-//			player.setFrequency(frequency);
 			now_processing=false;
-//			Log.d("TAG", "after callback");
 		}
 	};
 
@@ -100,7 +96,6 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	public void surfaceCreated(SurfaceHolder holder) {
 		try {
 			camera.setPreviewDisplay(holder);
-//			camera.setPreviewTexture(new SurfaceTexture(17));
 		} catch (IOException ioe){
 			ioe.printStackTrace();
 		}
@@ -127,13 +122,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-//		try {
-//			camera.setPreviewCallback(null);
-////			camera.remove
-//			camera.stopPreview();
-//		} catch (Exception e){
-//			e.printStackTrace();
-//		}
+		Log.d("AppLog", "surface destroyed");
 	}
 	
 	public void cleanup(){
