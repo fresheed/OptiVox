@@ -25,12 +25,9 @@ public class SoundPlayer {
 		buffer_size=count*2;
 		for (int s=0; s<7; s++){
 			samples[s] = new short[count];
-//			bbuffers[s]=ByteBuffer.allocate(buffer_size);
 			for(int i = 0; i < samples[s].length; i ++){
 				short sample = (short)((Math.cos(2 * Math.PI * i / (RATE / (freqs[s])))) * Short.MAX_VALUE);
 				samples[s][i] = sample;
-//				bbuffers[s].put(2*i, (byte) ((sample & 0xFF00)>>2));
-//				bbuffers[s].put(2*i+1, (byte) ((sample & 0xFF)>>2));
 			}
 		}
 		
@@ -38,7 +35,6 @@ public class SoundPlayer {
                 AudioFormat.ENCODING_PCM_16BIT, buffer_size,
                 AudioTrack.MODE_STREAM); 
 		stream.setPlaybackRate(RATE);
-//		stream.setStereoVolume(1F, 1F);
 		stream.play();
 		
 		current_frequency=100;
@@ -59,13 +55,9 @@ public class SoundPlayer {
 				int freq_num;
 				synchronized (current_frequency) {
 					freq_num=current_frequency/FREQ_INTERVAL;
+					if (freq_num>6) freq_num=6;
 				}
-//				stream.pause();
-//				stream.flush();
-//				Log.d("tag", "before write: "+stream.getPlaybackHeadPosition());
 				stream.write(samples[freq_num], 0, buffer_size/2); //1/2 of buffer
-//				stream.write(bbuffers[freq_num], bbuffers[freq_num].capacity()/2, AudioTrack.WRITE_BLOCKING);
-				//stream.play();
 			}
 		}
 	};
@@ -82,5 +74,6 @@ public class SoundPlayer {
 		Log.d("Tag", "sound stopped");
 		is_playing=false;
 		stream.stop();
+		stream.release();
 	}
 }

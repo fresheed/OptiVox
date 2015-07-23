@@ -4,12 +4,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <Button
-        android:id="@+id/clicker"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Click" 
-    />
+<!--     <Button -->
+<!--         android:id="@+id/goto_settings" -->
+<!--         android:layout_width="wrap_content" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:text="Settings" /> -->
     
      <LinearLayout
 	    android:id="@+id/linear"
@@ -18,10 +17,41 @@
 	    android:layout_height="0dp"
 	    android:layout_weight="1"
    	 >
-
-
+   	 <LinearLayout
+	    android:id="@+id/sets"
+	    android:orientation="vertical"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_weight="1"
+   	 >
+   	 		
+   	 </LinearLayout>
+	 	
      </LinearLayout>
-     
+     <TextView
+	        android:id="@+id/filter_label"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Set filtration level (brightness of border point):"
+	         />
+	
+	    <SeekBar
+	        android:id="@+id/filter_level"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:progress="50" />
+	
+	    <TextView
+	        android:id="@+id/sens_label"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Sensitivity level (bright points per vertical): " />
+	
+	    <SeekBar
+	        android:id="@+id/sens_level"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:progress="10" />
     <TextView
         android:id="@+id/freq_view"
         android:layout_width="wrap_content"

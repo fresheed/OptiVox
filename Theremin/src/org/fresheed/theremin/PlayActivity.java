@@ -1,12 +1,12 @@
 package org.fresheed.theremin;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -15,8 +15,10 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class PlayActivity extends Activity implements android.view.View.OnClickListener {
 	  private CameraCapture cam_capture;
@@ -41,6 +43,7 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    player=new SoundPlayer();
 	    player.playInBackground();
 	    
+	    
 	    SurfaceView camView = new SurfaceView(this);
 	    SurfaceHolder camHolder = camView.getHolder();
 	    try {
@@ -57,12 +60,10 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	    camHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 	         
 	    mainLayout = (LinearLayout) findViewById(R.id.linear);
-	    mainLayout.addView(cam_preview, new LayoutParams(preview_size_width, previw_size_height));
+	    mainLayout.addView(cam_preview, 0, new LayoutParams(preview_size_width, previw_size_height));
+	    mainLayout.addView(camView, 0, new LayoutParams(preview_size_width, previw_size_height));
 	    
-	    mainLayout.addView(camView, new LayoutParams(preview_size_width, previw_size_height));
-	    
-	    Button click=(Button)findViewById(R.id.clicker);
-	    click.setOnClickListener(this);
+	    useSettings();
 	    
 	    Log.d("TAG", "end onCreate");
 	  }
@@ -91,12 +92,40 @@ public class PlayActivity extends Activity implements android.view.View.OnClickL
 	  @Override
 	  public void onClick(View v) {
 	    switch (v.getId()) {
-	    case R.id.clicker:
-	    	Log.d("CAMCAPTURE", "brn clicked");
-	      	Toast.makeText(this, "Parallel", Toast.LENGTH_SHORT).show();
-	      break;
+//	    case R.id.goto_settings:
+//	    	Intent i=new Intent(this, SettingsActivity.class);
+//	    	startActivity(i);
+//	      break;
 	    }
 	  }
+	  
+	    
+		SeekBar filter, sens;
+		float filter_value, sens_value;
+		void useSettings(){
+			filter=(SeekBar) findViewById(R.id.filter_level);
+			sens=(SeekBar) findViewById(R.id.sens_level);
+			
+			OnSeekBarChangeListener listener=new OnSeekBarChangeListener() {
+				
+				@Override
+				public void onStopTrackingTouch(SeekBar seekBar) {}
+				
+				@Override
+				public void onStartTrackingTouch(SeekBar seekBar) {}
+				
+				@Override
+				public void onProgressChanged(SeekBar seekBar, int progress,
+						boolean fromUser) {
+					if (seekBar==filter) filter_value=progress/100F;
+					else if (seekBar==sens) sens_value=progress/100F;
+					cam_capture.setProcessingValues(filter_value, sens_value);
+				}
+			};
+			
+			filter.setOnSeekBarChangeListener(listener);
+			sens.setOnSeekBarChangeListener(listener);
+		}
 	  
 	  ImageProcessCallback getProcessCallback(){
 		  return new ImageProcessCallback() {

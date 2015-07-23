@@ -78,6 +78,7 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 			public void run(){
 				now_processing=true;
 				frequency=processor.processByGradient(data_array, pixel_array, threshold, per_line);
+//				processor.processImg(data_array, 0, preview_height,preview_width, pixel_array);
 		        handler.post(updatePreview);
 			}
 		}.start();

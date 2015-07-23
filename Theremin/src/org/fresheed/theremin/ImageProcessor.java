@@ -15,7 +15,6 @@ public class ImageProcessor {
 	final int WIDTH, HEIGHT;
 	final int[][] bitmap_colors;
 	
-	
 	final int[] temp;
 	
 	byte[][] owners;
