@@ -1,7 +1,6 @@
 package org.fresheed.theremin;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -10,22 +9,17 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewGroup.LayoutParams;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class PlayActivity extends Activity  {
 	  private CameraCapture cam_capture;
 	  private ImageView cam_preview;
-	  private TextView freq;
 	  private LinearLayout main_layout;
-	  SoundPlayer player;
+	  SoundPlayer sound_player;
 	  private int preview_size_width = 320;
 	  private int previw_size_height= 240;
 	  private Camera camera;
@@ -38,11 +32,9 @@ public class PlayActivity extends Activity  {
 	    setContentView(R.layout.play_layout);
 	    
 	    cam_preview=new ImageView(this);
-	    freq=(TextView)findViewById(R.id.freq_view);
 
-	    player=new SoundPlayer();
-	    player.playInBackground();
-	    
+	    sound_player=new SoundPlayer();
+	    sound_player.playInBackground();
 	    
 	    SurfaceView camView = new SurfaceView(this);
 	    SurfaceHolder camHolder = camView.getHolder();
@@ -78,7 +70,7 @@ public class PlayActivity extends Activity  {
 			camera.release();
 			camera=null;
 			
-			player.stop();
+			sound_player.stop();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
@@ -126,8 +118,7 @@ public class PlayActivity extends Activity  {
 			
 			@Override
 			public void setFrequency(int f) {
-				freq.setText("Frequence: "+f);
-				player.setFrequency(f);
+				sound_player.setFrequency(f);
 			}
 		};
 	  }

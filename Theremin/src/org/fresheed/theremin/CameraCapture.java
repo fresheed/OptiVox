@@ -12,8 +12,6 @@ import android.hardware.Camera.Size;
 import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 @SuppressWarnings("deprecation")
 public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCallback {
@@ -36,14 +34,13 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	
 	private Camera camera;
 	
-	int frequency;
+	private final Object proc_lock=new Object();
 	private boolean now_processing=false;
 	
 	public CameraCapture (int prev_width, int prev_height, Camera cam, Handler h, ImageProcessCallback cb) {
 		preview_width=prev_width;
 		preview_height=prev_height;
 		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ARGB_8888);
-//		bitmap=Bitmap.createBitmap(prev_width, prev_height, Bitmap.Config.ALPHA_8);
 		pixel_array=new int[prev_height*prev_width];
 		p("Creation: "+pixel_array.length);
 		
@@ -59,10 +56,13 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
 	    if (image_format == ImageFormat.NV21){
-	    	if ( !now_processing ){
-	    	data_array = data;
-	    	asyncProcessImage();
-	     }
+	    	synchronized (proc_lock) {
+	    		if ( !now_processing ){
+	    			now_processing=true;
+	    			data_array = data;
+	    			asyncProcessImage();
+	    		}
+			}
 	   }
 	}
 	
@@ -75,9 +75,9 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 		new Thread(){
 			@Override
 			public void run(){
-				now_processing=true;
-				frequency=processor.processByGradient(data_array, pixel_array, threshold, per_line);
+				int frequency=processor.processByGradient(data_array, pixel_array, threshold, per_line);
 		        handler.post(updatePreview);
+		        process_callback.setFrequency(frequency);
 			}
 		}.start();
 	}
@@ -85,10 +85,11 @@ public class CameraCapture implements SurfaceHolder.Callback, Camera.PreviewCall
 	private Runnable updatePreview=new Runnable(){
 		@Override
 		public void run(){
+			synchronized (proc_lock) {
+				now_processing=false;
+			}
 			bitmap.setPixels(pixel_array, 0, preview_width, 0,0 , preview_width, preview_height);
-			process_callback.setFrequency(frequency);
 			process_callback.setProcessedImage(bitmap);
-			now_processing=false;
 		}
 	};
 

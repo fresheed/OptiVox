@@ -1,7 +1,5 @@
 package org.fresheed.theremin;
 
-import java.nio.ByteBuffer;
-
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -13,8 +11,9 @@ public class SoundPlayer {
 	final int FREQ_INTERVAL=320/7;
 	float[] freqs={261.6F, 293.7F, 329.6F, 349.2F, 392, 440, 494};
 	short[][] samples=new short[7][];
-	ByteBuffer[] bbuffers=new ByteBuffer[7];
-	AudioTrack now_playing, stream;
+	AudioTrack stream;
+	
+	private final Object freq_lock=new Object();
 	Integer current_frequency;
 	
 	public SoundPlayer(){
@@ -39,19 +38,19 @@ public class SoundPlayer {
 	}
 	
 	void setFrequency(int freq){
-		synchronized (current_frequency) {
+		synchronized (freq_lock) {
 			current_frequency=freq;
 		}
 	}
 	
 	
-	boolean is_playing=false;
+	volatile boolean is_playing=false;
 	Thread play_thread=new Thread(){
 		@Override
 		public void run(){
 			while (is_playing){
 				int freq_num;
-				synchronized (current_frequency) {
+				synchronized (freq_lock) {
 					freq_num=current_frequency/FREQ_INTERVAL;
 					if (freq_num>6) freq_num=6;
 				}
@@ -62,7 +61,6 @@ public class SoundPlayer {
 	
 	void playInBackground(){
 		is_playing=true;
-		play_thread.setPriority(Thread.MIN_PRIORITY);
 		play_thread.setDaemon(true);
 		play_thread.start();
 		Log.d("tag", "thread started");
